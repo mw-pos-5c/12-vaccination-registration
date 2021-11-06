@@ -26,10 +26,10 @@ namespace VaccReg
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseCors(builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseHttpsRedirection();
                 app.UseRouting();
                 app.UseAuthorization();
                 app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
@@ -39,9 +39,11 @@ namespace VaccReg
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<VaccRegContext>(options => options.UseSqlite(@"Data Source=Resources/vaccinations.db"));
+            services.AddScoped<VaccRegService>();
+            
             services.AddControllers();
 
-            services.AddHostedService<VaccRegService>();
+            services.AddHostedService<VaccRegHostedService>();
         }
     }
 

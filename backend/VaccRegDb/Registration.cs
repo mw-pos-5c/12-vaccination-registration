@@ -8,7 +8,7 @@ namespace VaccRegDb
     {
        
         public string FirstName { get; set; }
-        public long Id { get; set; }
+        public int Id { get; set; }
         public string LastName { get; set; }
         [JsonProperty("pin")]
         public long PinCode { get; set; }

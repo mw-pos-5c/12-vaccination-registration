@@ -1,64 +1,99 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
-using Newtonsoft.Json;
+using VaccReg.Dtos;
 
 using VaccRegDb;
 
 namespace VaccReg.Services
 {
-    public class VaccRegService : IHostedService
+    public class VaccRegService
     {
-        private readonly ILogger<VaccRegService> logger;
-        private readonly IServiceScopeFactory scopeFactory;
+        private VaccRegContext db;
 
-        public VaccRegService(ILogger<VaccRegService> logger, IServiceScopeFactory scopeFactory)
+        public VaccRegService(VaccRegContext db)
         {
-            this.logger = logger;
-            this.scopeFactory = scopeFactory;
+            this.db = db;
         }
 
-        private void ImportData()
+        public Registration CheckSsn(long ssn, long pin)
         {
-            string[] args = Program.Args;
-            logger.Log(LogLevel.Information, string.Join(", ", args));
-            if (args.Length < 2 || !args[0].Equals("import"))
+            Registration registration = db.Registrations.Include(r => r.Vaccination).FirstOrDefault(r => r.SocialSecurityNumber == ssn);
+
+            if (registration == null || registration.PinCode != pin || registration.Vaccination != null)
             {
-                return;
+                return null;
             }
-            
-            logger.Log(LogLevel.Information, "Starting import ...");
-            
-            string jsonData = File.ReadAllText(args[1]);
-            var data = JsonConvert.DeserializeObject<List<Registration>>(jsonData);
-            using IServiceScope scope = scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<VaccRegContext>();
 
-            db.Database.EnsureDeleted();
-            db.Database.EnsureCreated();
+            return registration;
+        }
+
+        private static DateTime GetSlotById(DateTime day, int id)
+        {
+            DateTime start = day.Date.AddHours(8);
+
+            return start.AddMinutes(id * 15);
+        }
+
+        public IEnumerable<TimeSlotDto> GetTimeSlots(DateTime date)
+        {
+            if (new DateTime(2021, 12, 1).CompareTo(date) >= 0)
+            {
+                yield break;
+            }
+
+            if (new DateTime(2021, 12, 20).CompareTo(date) <= 0)
+            {
+                yield break;
+            }
+
+            for (var x = 0; x < 12; x++)
+            {
+                DateTime slotDate = GetSlotById(date, x);
+
+                if (db.Vaccinations.Any(v => v.VaccinationDate.Equals(slotDate)))
+                {
+                    continue;
+                }
+
+                yield return new TimeSlotDto
+                {
+                    Id = x,
+                    DateTime = slotDate.ToShortTimeString()
+                };
+            }
+        }
+
+        public VaccConfirm RegisterTimeSlot(long ssn, long pin, DateTime slot, int id)
+        {
+            Registration registration = CheckSsn(ssn, pin);
             
-            db.Registrations.AddRange(data);
+            slot = GetSlotById(slot, id);
+
+            if (registration == null || db.Vaccinations.Any(v => v.VaccinationDate.Equals(slot)))
+            {
+                return null;
+            }
+
+            var vaccination = new Vaccination
+            {
+                RegistrationId = registration.Id,
+                VaccinationDate = slot
+            };
+
+            db.Vaccinations.Add(vaccination);
             db.SaveChanges();
-            
-            logger.Log(LogLevel.Information, $"Imported {data.Count} registrations");
-        }
-        
-        
-        
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            return Task.Run(ImportData, cancellationToken);
-        }
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
+            return new VaccConfirm
+            {
+                RegistrationId = registration.Id,
+                Date = slot.ToShortDateString(),
+                Time = slot.ToShortTimeString()
+            };
         }
     }
 }

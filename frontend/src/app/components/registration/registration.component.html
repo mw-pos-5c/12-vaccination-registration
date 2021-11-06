@@ -1,0 +1,41 @@
+<ol>
+  <li>
+    <h4 *ngIf="service.step >= 0">Enter your social security number and your pin</h4>
+    <form *ngIf="service.step == 0" [formGroup]="ssnFormGroup" (ngSubmit)="ssnFormSubmit()">
+      <input type="number" formControlName="ssn" placeholder="Social Security Number">
+      <input type="number" formControlName="pin" placeholder="PIN">
+      <button type="submit">Submit</button>
+      <span *ngIf="ssnError" class="error">Invalid credentials or this person already has a timeslot</span>
+    </form>
+  </li>
+
+  <li>
+    <span *ngIf="service.step < 1">Vaccination date</span>
+    <h4 *ngIf="service.step >= 1">Welcome {{service.patient?.firstname}} {{service.patient?.lastname}}!
+      Please select date of vaccination</h4>
+    <form *ngIf="service.step == 1" [formGroup]="dateFormGroup" (ngSubmit)="dateFormSubmit()">
+      <input type="date" formControlName="date">
+      <button type="submit">Submit</button>
+      <span *ngIf="dateError" class="error">Selected date is not allowed</span>
+    </form>
+  </li>
+
+  <li>
+    <span *ngIf="service.step < 2">Select time slot</span>
+    <h4 *ngIf="service.step >= 2">On the {{service.date}}, we have the following available time slots. Please choose one.</h4>
+    <form *ngIf="service.step == 2" [formGroup]="slotFormGroup" (ngSubmit)="slotFormSubmit()">
+      <select formControlName="slot">
+        <option *ngFor="let row of service.timeSlots" [value]="row.id">{{row.dateTime}}</option>
+      </select>
+      <button type="submit">Submit</button>
+    </form>
+  </li>
+
+  <li>
+    <span *ngIf="service.step < 3">Confirmation</span>
+    <h4 *ngIf="service.step == 3">Your vaccination registration ID is {{service.confirmation?.registrationId}}.
+      Please come to your doctor on {{service.confirmation?.date}} at {{service.confirmation?.time}}.</h4>
+  </li>
+
+
+</ol>

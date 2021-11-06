@@ -1,13 +1,15 @@
-﻿#nullable disable
+﻿using System;
+
+#nullable disable
 
 namespace VaccRegDb
 {
     public partial class Vaccination
     {
-        public long Id { get; set; }
+        public int Id { get; set; }
 
         public virtual Registration Registration { get; set; }
-        public long RegistrationId { get; set; }
-        public string VaccinationDate { get; set; }
+        public int RegistrationId { get; set; }
+        public DateTime VaccinationDate { get; set; }
     }
 }
