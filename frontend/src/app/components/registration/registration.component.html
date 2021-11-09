@@ -4,7 +4,7 @@
     <form *ngIf="service.step == 0" [formGroup]="ssnFormGroup" (ngSubmit)="ssnFormSubmit()">
       <input type="number" formControlName="ssn" placeholder="Social Security Number">
       <input type="number" formControlName="pin" placeholder="PIN">
-      <button type="submit">Submit</button>
+      <button [disabled]="!ssnFormGroup.valid" type="submit">Submit</button>
       <span *ngIf="ssnError" class="error">Invalid credentials or this person already has a timeslot</span>
     </form>
   </li>
@@ -14,7 +14,7 @@
     <h4 *ngIf="service.step >= 1">Welcome {{service.patient?.firstname}} {{service.patient?.lastname}}!
       Please select date of vaccination</h4>
     <form *ngIf="service.step == 1" [formGroup]="dateFormGroup" (ngSubmit)="dateFormSubmit()">
-      <input type="date" formControlName="date">
+      <input type="date" min="2021-12-01" max="2021-12-20" formControlName="date">
       <button type="submit">Submit</button>
       <span *ngIf="dateError" class="error">Selected date is not allowed</span>
     </form>

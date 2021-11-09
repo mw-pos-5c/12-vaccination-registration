@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {VaccRegService} from "../../services/vacc-reg.service";
-import {FormControl, FormGroup} from "@angular/forms";
+import {FormBuilder, FormControl, FormGroup, Validators} from "@angular/forms";
 
 @Component({
   selector: 'app-registration',
@@ -16,12 +16,12 @@ export class RegistrationComponent implements OnInit {
   ssnError: boolean = false;
   dateError: boolean = false;
 
-  constructor(public service: VaccRegService) { }
+  constructor(public service: VaccRegService, private fb: FormBuilder) { }
 
   ngOnInit(): void {
-    this.ssnFormGroup = new FormGroup({
-      ssn: new FormControl(''),
-      pin: new FormControl('')
+    this.ssnFormGroup = this.fb.group({
+      ssn: ['', [Validators.required, Validators.max(9999999999), Validators.min(1000000000)]],
+      pin: ['', [Validators.required, Validators.max(999999), Validators.min(100000)]]
     });
 
     this.dateFormGroup = new FormGroup({
